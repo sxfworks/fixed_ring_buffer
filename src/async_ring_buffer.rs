@@ -292,14 +292,14 @@ impl AsyncRead for RingBufferReader {
 
 #[cfg(test)]
 mod unit_tests {
-  use super::*;
+  use std::sync::Arc;
   use bytes::BufMut;
   use async_std::task;
   use std::{thread};
   use futures::io::{AsyncWriteExt, AsyncReadExt};
   use futures_lite::future;
 
-  use crate::async_ring_buffer::{RingBufferReader, RingBufferWriter};
+  use crate::async_ring_buffer::{RingBufferReader, RingBufferWriter, RingBuffer};
 
   #[test]
   fn test_async_ring_buffer() {
