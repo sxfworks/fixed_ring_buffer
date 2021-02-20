@@ -348,8 +348,5 @@ mod unit_tests {
     fix_buf.resize(1024);
     assert_eq!(fix_buf.len(), 1024);
     assert_eq!(1024, fix_buf.capacity());
-
-    let mut fix_buf_read_only = fix_buf.clone();
-    fix_buf_read_only.write_buf_at("test".as_bytes(), 0).unwrap();
   }
 }
