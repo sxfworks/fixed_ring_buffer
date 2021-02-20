@@ -131,7 +131,7 @@ impl AsyncWrite for RingBufferWriter {
       }
 
       let valid_data = ring_buffer.valid_data.load(Ordering::SeqCst) as usize;
-      // Notice: reader 在这个时间线内读取了部分数据，然后变更了valid_data，reader会wake writer写入数据，依赖于poll的过程中wake通知是否会丢失
+
       if valid_data == capacity {
         ring_buffer.wake_reader();
         return Poll::Pending;
@@ -182,8 +182,7 @@ impl AsyncBufRead for RingBufferReader {
     ring_buffer.register_read_waker(&cx.waker());
 
     let valid_data = ring_buffer.valid_data.load(Ordering::SeqCst) as usize;
-    // (1) writer 继续执行 变更 valid_data 并关闭 writer 
-    // (2) writer直接写满 buffer，出现writer pending
+
     if valid_data <= 0 {
       if ring_buffer.write_shutdown.load(Ordering::Relaxed) {
         if ring_buffer.valid_data.load(Ordering::SeqCst) == 0 {
@@ -253,8 +252,7 @@ impl AsyncRead for RingBufferReader {
       ring_buffer.register_read_waker(cx.waker());
 
       let valid_data = ring_buffer.valid_data.load(Ordering::SeqCst) as usize;
-      // (1) writer 继续执行 变更 valid_data 并关闭 writer
-      // (2) writer 直接写满 buffer，出现writer pending
+
       if valid_data <= 0 {
         if ring_buffer.write_shutdown.load(Ordering::SeqCst) {
           if ring_buffer.valid_data.load(Ordering::SeqCst) == 0 {
@@ -341,13 +339,13 @@ mod unit_tests {
         let mut length = 0 as usize;
         let mut contents: Vec<u8> = Vec::new();
         contents.put("warning: unused std::result::Result that must be used warning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be usedwarning: unused std::result::Result that must be used".as_bytes());
-        for i in 0..102400 as usize {
+        for i in 0..1024 as usize {
           match writer.write_all(&mut contents).await {
             Ok(()) => {
               length += contents.len();
             },
             Err(e) => {
-              panic!("write err = {}", e);
+              panic!("write err = {} index = {}", e, i);
             },
           }
         }
@@ -357,14 +355,14 @@ mod unit_tests {
       task::block_on(handle);
     });
 
-    t1.join();
-    t2.join();
+    t1.join().unwrap();
+    t2.join().unwrap();
   }
 
   #[test]
   fn test_async_ring_buffer_write_all_read() {
     let thread_handle = thread::spawn(move ||{
-      for i in 0..102400 {
+      for i in 0..1024 {
         let ring_buffer = Arc::new(RingBuffer::new(64));
         let mut reader = RingBufferReader::new(ring_buffer.clone());
         let mut writer = RingBufferWriter::new(ring_buffer.clone());
@@ -493,7 +491,7 @@ mod unit_tests {
     let thread_handle = thread::spawn(move ||{
       for i in 0..1024 {
         let ring_buffer = Arc::new(RingBuffer::new(64));
-        let mut reader = RingBufferReader::new(ring_buffer.clone());
+        let reader = RingBufferReader::new(ring_buffer.clone());
         let mut writer = RingBufferWriter::new(ring_buffer.clone());
         let content: String = "warning: unused std::result::Result unused std::resulunused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be unused std::result::Result that must be used which should be t::Result that must be used which should be that must be used which should be handled which should be handled warning: warning: unused std::result::Result that must be used which should be handled which should be handled warnwarning: unused std::result::Result that must be used which should be handled which should be handled warnwarning: unused std::result::Result that must be used which should be handled which should be handled warnwarning: unused std::result::Result that must be used which should be handled which should be handled warnwarning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,warning: unused std::result::Result that must be used which should be handled which should be handled warning: 7 warnings emitted help: if this is intentional,ing: 7 warnings emitted help: if this is intentional,ing: 7 warnings emitted help: if this is intentional,ing: 7 warnings emitted help: if this is intentional,ing: 7 warnings emitted help: if this is intentional,7 warnings emitted help: if this is intentional, prefix it with an underscore:".to_string() + &i.to_string();
         let content_read = content.clone();

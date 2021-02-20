@@ -3,7 +3,7 @@ use std::alloc::alloc;
 use std::alloc::dealloc;
 use std::sync::Arc;
 use byteorder::{ByteOrder, BigEndian};
-use core::{isize, slice, usize};
+use core::{slice, usize};
 use core::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicBool, AtomicPtr, AtomicU64, Ordering};
 
