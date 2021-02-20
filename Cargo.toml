@@ -2,12 +2,16 @@
 name = "fixed_ring_buffer"
 version = "0.1.0"
 authors = ["尚效飞 <sxfworks@163.com>"]
+description = "An asynchronous SPSC fixed-capacity look-free ring buffer, which can be used to transfer data between two threads or between two asynchronous tasks"
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/sxfworks/fixed_ring_buffer"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-byteorder = "*"
+byteorder = "1.4.2"
 futures = "0.3.12"
 bytes = "1"
 async-std = { version = "1.6.0", features = ["attributes"] }
