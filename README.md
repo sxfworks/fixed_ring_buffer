@@ -1,5 +1,14 @@
 # Async lock-free Ringbuffer
 
+[![Build](https://github.com/sxfworks/fixed_ring_buffer/workflows/build-and-test/badge.svg)](
+https://github.com/sxfworks/fixed_ring_buffer/actions)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](
+https://github.com/sxfworks/fixed_ring_buffer)
+[![Cargo](https://img.shields.io/crates/v/fixed_ring_buffer.svg)](
+https://crates.io/crates/fixed_ring_buffer)
+[![Documentation](https://docs.rs/fixed_ring_buffer/badge.svg)](
+https://docs.rs/fixed_ring_buffer)
+
 FixedRingBuffer is an asynchronous SPSC fixed-capacity look-free ring buffer, which can be used to transfer data between two threads or between two asynchronous tasks. The overall feature is as follows:
 * lock-free
 * spsc
