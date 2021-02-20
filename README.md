@@ -18,69 +18,76 @@ FixedRingBuffer is an asynchronous SPSC fixed-capacity look-free ring buffer, wh
 
 Quick Start
 ------------
+Add the dependency package of async_ring_buffer in Cargo.toml as follows:
 ```rust
-    use std::sync::Arc;
-    use bytes::BufMut;
-    use async_std::task;
-    use std::{thread};
-    use futures::io::{AsyncWriteExt, AsyncReadExt};
-    use futures_lite::future;
+[dependencies]
+fixed_ring_buffer = "0.1.0"
+```
 
-    use crate::async_ring_buffer::{RingBufferReader, RingBufferWriter, RingBuffer};
+Use AsyncRead, AsyncBufRead and AsyncWrite external methods to operate AsyncRingBuffer as follows:
+```rust
+use std::sync::Arc;
+use bytes::BufMut;
+use async_std::task;
+use std::{thread};
+use futures::io::{AsyncWriteExt, AsyncReadExt};
 
+use fixed_ring_buffer::async_ring_buffer::{RingBufferReader, RingBufferWriter, RingBuffer};
 
-    let ring_buffer = Arc::new(RingBuffer::new(1024));
-    
+fn main() {
+    let ring_buffer = Arc::new(RingBuffer::new(32960));
+
     let mut reader = RingBufferReader::new(ring_buffer.clone());
     let mut writer = RingBufferWriter::new(ring_buffer.clone());
 
     let t1 = thread::spawn(move ||{
-      let handle = task::spawn(async move {
+        let handle = task::spawn(async move {
         let mut length = 0 as usize;
         let mut contents: Vec<u8> = Vec::with_capacity(16096);
         contents.resize(16096, 0);
         loop {
-          match reader.read(&mut contents).await {
+            match reader.read(&mut contents).await {
             Ok(size) => {
-              if size > 0 {
+                if size > 0 {
                 length += size;
-              } else {
+                } else {
                 break;
-              }
+                }
             },
             Err(e) => {
-              panic!("read err = {}", e);
+                panic!("read err = {}", e);
             },
-          }
+            }
         }
 
         println!("length = {}", length);
-      });
+        });
 
-      task::block_on(handle);
+        task::block_on(handle);
     });
 
     let t2 = thread::spawn(move ||{
-      let handle = task::spawn(async move {
+        let handle = task::spawn(async move {
         let mut length = 0 as usize;
         let mut contents: Vec<u8> = Vec::new();
-        contents.put("example-data-data".as_bytes());
+        contents.put("xxxxxnnnnnmmmmmmmmsssss".as_bytes());
         for i in 0..102400 as usize {
-          match writer.write_all(&mut contents).await {
+            match writer.write_all(&mut contents).await {
             Ok(()) => {
-              length += contents.len();
+                length += contents.len();
             },
             Err(e) => {
-              panic!("write err = {}", e);
+                panic!("write err = {} index = {}", e, i);
             },
-          }
+            }
         }
         println!("length = {}", length);
-      });
+        });
 
-      task::block_on(handle);
+        task::block_on(handle);
     });
 
-    t1.join();
-    t2.join();
+    t1.join().unwrap();
+    t2.join().unwrap();
+}
 ```
