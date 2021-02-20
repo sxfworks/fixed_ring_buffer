@@ -10,6 +10,7 @@ use futures::io::{AsyncBufRead, AsyncRead, AsyncWrite,  Result};
 
 use crate::fixed_buffer;
 
+/// Asynchronous RingBuffer with fixed capacity
 pub struct RingBuffer {
   buffer: fixed_buffer::FixedBuffer,
   valid_data: AtomicU64,
@@ -24,6 +25,7 @@ pub struct RingBuffer {
 impl RingBuffer {
   const EMPTY_BUFFER: [u8; 0] = [0; 0];
 
+  /// Create a the memory will be released when the ringbuffer is destroyed
   pub fn new(capacity: usize) -> RingBuffer {
     let mut buffer = fixed_buffer::FixedBuffer::alloc(capacity);
     buffer.resize(capacity);
@@ -39,6 +41,7 @@ impl RingBuffer {
     }; 
   }
 
+  /// Create a fixed-capacity ringbuffer through a fixed-capacity buffer, and the memory occupied by the buffer is controlled by the buffer itself
   pub fn from_fixed_buffer(buffer: fixed_buffer::FixedBuffer) -> RingBuffer {
     return RingBuffer {
       buffer: buffer,
@@ -93,6 +96,7 @@ impl RingBuffer {
   }
 }
 
+/// Writer of asynchronous fixed-capacity ringbuffer
 pub struct RingBufferWriter(Arc<RingBuffer>);
 
 impl Drop for RingBufferWriter {
@@ -104,10 +108,12 @@ impl Drop for RingBufferWriter {
 }
 
 impl RingBufferWriter {
+  /// Create a writer for ringbuffer by ringbuffer
   pub fn new(buffer: Arc<RingBuffer>) -> RingBufferWriter {
     return RingBufferWriter(buffer);
   }
 
+  /// Create a writer for ringbuffer by RingBufferReader
   pub fn from_reader(reader: &RingBufferReader) -> RingBufferWriter {
     return RingBufferWriter(reader.0.clone());
   }
@@ -225,6 +231,7 @@ impl AsyncBufRead for RingBufferReader {
   }
 }
 
+/// Reader of asynchronous fixed-capacity ringbuffer
 pub struct RingBufferReader(Arc<RingBuffer>);
 
 impl Drop for RingBufferReader {
@@ -236,10 +243,12 @@ impl Drop for RingBufferReader {
 }
 
 impl RingBufferReader {
+  /// Create a reader for ringbuffer by ringbuffer
   pub fn new(buffer: Arc<RingBuffer>) -> RingBufferReader {
     return RingBufferReader(buffer);
   }
 
+  /// Create a reader for ringbuffer by RingBufferWriter
   pub fn from_writer(writer: &RingBufferWriter) -> RingBufferReader {
     return RingBufferReader(writer.0.clone());
   }
